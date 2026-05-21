@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { BookingCalendar } from '@/components/BookingCalendar'
 import {
   ShieldCheck, CalendarDays, Scissors, Users, CheckCircle,
-  XCircle, Plus, Loader2, Lock, Unlock, RefreshCw
+  XCircle, Plus, Loader2, Lock, Unlock, RefreshCw, Clock
 } from 'lucide-react'
 import { format, parse, parseISO, addMinutes } from 'date-fns'
 import { toast } from 'sonner'
