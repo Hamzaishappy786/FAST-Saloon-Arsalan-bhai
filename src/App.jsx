@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@/context/AuthContext'
+import { RealtimeProvider } from '@/context/RealtimeContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { Navbar } from '@/components/Navbar'
 import { Toaster } from 'sonner'
@@ -22,6 +23,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <RealtimeProvider>
         <Toaster
           position="top-right"
           toastOptions={{
@@ -76,6 +78,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        </RealtimeProvider>
       </AuthProvider>
     </BrowserRouter>
   )

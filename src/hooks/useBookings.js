@@ -1,6 +1,8 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
+import { useRealtimeListener } from '@/context/RealtimeContext'
+import { debounce } from '@/lib/debounce'
 
 export function useBookings() {
   const { user } = useAuth()
@@ -16,7 +18,7 @@ export function useBookings() {
       const { data, error: fetchError } = await supabase
         .from('appointments')
         .select(`
-          *,
+          id, status, notes, booked_at, updated_at, user_id,
           time_slots (id, slot_date, start_time, end_time, barbers (id, name))
         `)
         .eq('user_id', user.id)
@@ -31,9 +33,10 @@ export function useBookings() {
     }
   }, [user])
 
-  useEffect(() => {
-    fetchBookings()
-  }, [fetchBookings])
+  useEffect(() => { fetchBookings() }, [fetchBookings])
+
+  const debouncedRefetch = useMemo(() => debounce(fetchBookings, 600), [fetchBookings])
+  useRealtimeListener('appointments', debouncedRefetch)
 
   async function bookSlot(slotId, notes = '') {
     if (!user) throw new Error('Not authenticated')
@@ -67,14 +70,17 @@ export function useAllBookings() {
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
+      // Scoped to today + next 7 days to avoid fetching entire history
+      const today = new Date().toISOString().split('T')[0]
       const { data, error } = await supabase
         .from('appointments')
         .select(`
-          *,
+          id, status, notes, booked_at, updated_at, user_id,
           profiles (full_name, roll_number, phone, role),
           time_slots (id, slot_date, start_time, end_time, barbers (id, name))
         `)
-        .order('time_slots(slot_date)', { ascending: true })
+        .gte('time_slots.slot_date', today)
+        .order('booked_at', { ascending: false })
 
       if (error) throw error
       setBookings(data || [])
@@ -85,16 +91,10 @@ export function useAllBookings() {
     }
   }, [])
 
-  useEffect(() => {
-    fetchAll()
+  useEffect(() => { fetchAll() }, [fetchAll])
 
-    const channel = supabase
-      .channel('admin-bookings')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, fetchAll)
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
-  }, [fetchAll])
+  const debouncedRefetch = useMemo(() => debounce(fetchAll, 600), [fetchAll])
+  useRealtimeListener('appointments', debouncedRefetch)
 
   async function updateStatus(appointmentId, status) {
     const { error } = await supabase

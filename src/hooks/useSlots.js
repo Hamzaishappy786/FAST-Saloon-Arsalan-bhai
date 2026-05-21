@@ -1,5 +1,7 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useRealtimeListener } from '@/context/RealtimeContext'
+import { debounce } from '@/lib/debounce'
 import { format } from 'date-fns'
 
 export function useSlots(date, barberId) {
@@ -16,7 +18,7 @@ export function useSlots(date, barberId) {
       let query = supabase
         .from('time_slots')
         .select(`
-          *,
+          id, barber_id, slot_date, start_time, end_time, is_blocked,
           barbers (id, name),
           appointments (id, status, user_id, profiles (full_name, roll_number))
         `)
@@ -35,30 +37,13 @@ export function useSlots(date, barberId) {
     }
   }, [date, barberId])
 
-  useEffect(() => {
-    fetchSlots()
-  }, [fetchSlots])
+  useEffect(() => { fetchSlots() }, [fetchSlots])
 
-  // Realtime subscription
-  useEffect(() => {
-    if (!date) return
+  // Debounced so rapid successive DB events don't each fire a request
+  const debouncedRefetch = useMemo(() => debounce(fetchSlots, 600), [fetchSlots])
 
-    const channel = supabase
-      .channel(`slots-${format(date, 'yyyy-MM-dd')}-${barberId || 'all'}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'appointments' },
-        () => { fetchSlots() }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'time_slots' },
-        () => { fetchSlots() }
-      )
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
-  }, [date, barberId, fetchSlots])
+  useRealtimeListener('appointments', debouncedRefetch)
+  useRealtimeListener('time_slots', debouncedRefetch)
 
   return { slots, loading, error, refetch: fetchSlots }
 }
@@ -70,9 +55,10 @@ export function useTodaySlotsSummary() {
   const fetchSummary = useCallback(async () => {
     try {
       const today = format(new Date(), 'yyyy-MM-dd')
+      // Lightweight query — only fetch the fields we need for counting
       const { data, error } = await supabase
         .from('time_slots')
-        .select('id, is_blocked, appointments(id, status)')
+        .select('id, is_blocked, appointments(status)')
         .eq('slot_date', today)
 
       if (error) throw error
@@ -93,16 +79,10 @@ export function useTodaySlotsSummary() {
     }
   }, [])
 
-  useEffect(() => {
-    fetchSummary()
+  useEffect(() => { fetchSummary() }, [fetchSummary])
 
-    const channel = supabase
-      .channel('today-summary')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'appointments' }, fetchSummary)
-      .subscribe()
-
-    return () => { supabase.removeChannel(channel) }
-  }, [fetchSummary])
+  const debouncedRefetch = useMemo(() => debounce(fetchSummary, 600), [fetchSummary])
+  useRealtimeListener('appointments', debouncedRefetch)
 
   return { summary, loading }
 }
