@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CalendarPlus, Clock, CheckCircle, Scissors, TrendingUp, Zap } from 'lucide-react'
 import { format, parseISO, isAfter, parse } from 'date-fns'
+import { getDisplayName } from '@/lib/nameUtils'
 
 function formatTime(timeStr) {
   try {
@@ -69,7 +70,7 @@ export default function Dashboard() {
       <div className="flex items-start justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-100">
-            {greeting()}, <span className="text-gold-400">{profile?.full_name?.split(' ')[0] || 'there'}</span> 👋
+            {greeting()}, <span className="text-gold-400">{getDisplayName(profile?.full_name)}</span> 👋
           </h1>
           <p className="text-slate-400 mt-1">
             {format(today, "EEEE, MMMM d, yyyy")} · NUCES CFD Hostel Salon

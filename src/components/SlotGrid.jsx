@@ -2,6 +2,7 @@ import { format, parse } from 'date-fns'
 import { cn } from '@/components/ui/utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Lock, CheckCircle, Clock } from 'lucide-react'
+import { getDisplayName } from '@/lib/nameUtils'
 
 function slotStatus(slot) {
   if (slot.is_blocked) return 'blocked'
@@ -65,7 +66,7 @@ export function SlotGrid({ slots, loading, selectedSlotId, onSelect, adminMode =
             <span className="text-sm font-semibold">{formatTime(slot.start_time)}</span>
             <span className="text-xs opacity-70">{formatTime(slot.end_time)}</span>
             {adminMode && status === 'taken' && booker && (
-              <span className="text-xs opacity-60 truncate w-full text-center">{booker.full_name?.split(' ')[0]}</span>
+              <span className="text-xs opacity-60 truncate w-full text-center">{getDisplayName(booker.full_name)}</span>
             )}
           </button>
         )

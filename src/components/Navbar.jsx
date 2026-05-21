@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { LogOut, User, Scissors, LayoutDashboard, CalendarPlus, BookOpen, ShieldCheck, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
+import { getDisplayName, getInitials } from '@/lib/nameUtils'
 
 export function Navbar() {
   const { user, profile, signOut, isAdmin } = useAuth()
@@ -21,7 +22,7 @@ export function Navbar() {
   }
 
   const initials = profile?.full_name
-    ? profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+    ? getInitials(profile.full_name)
     : user?.email?.[0]?.toUpperCase() || '?'
 
   const navLinkClass = ({ isActive }) =>
@@ -80,7 +81,7 @@ export function Navbar() {
                   </Avatar>
                   <div className="hidden sm:block text-left">
                     <p className="text-sm font-medium text-slate-200 leading-none">
-                      {profile?.full_name?.split(' ')[0] || 'User'}
+                      {getDisplayName(profile?.full_name, 'User')}
                     </p>
                     <p className="text-xs text-slate-500 mt-0.5 capitalize">{profile?.role || 'student'}</p>
                   </div>
