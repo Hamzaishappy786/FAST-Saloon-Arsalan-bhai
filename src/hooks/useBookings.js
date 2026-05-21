@@ -79,11 +79,11 @@ export function useAllBookings() {
           profiles (full_name, roll_number, phone, role),
           time_slots (id, slot_date, start_time, end_time, barbers (id, name))
         `)
-        .gte('time_slots.slot_date', today)
         .order('booked_at', { ascending: false })
 
       if (error) throw error
-      setBookings(data || [])
+      const upcoming = (data || []).filter(b => (b.time_slots?.slot_date || '') >= today)
+      setBookings(upcoming)
     } catch (err) {
       console.error('Admin bookings fetch error:', err)
     } finally {
