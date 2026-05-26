@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useBookings } from '@/hooks/useBookings'
-import { useTodaySlotsSummary, useSlots } from '@/hooks/useSlots'
+import { useTodaySlotsSummary } from '@/hooks/useSlots'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { CalendarPlus, Clock, CheckCircle, Scissors, TrendingUp, Zap } from 'lucide-react'
 import { format, parseISO, isAfter, parse } from 'date-fns'
 import { getDisplayName } from '@/lib/nameUtils'
+import { supabase } from '@/lib/supabase'
 
 const yearMessages = {
   '1': {
@@ -75,7 +76,24 @@ export default function Dashboard() {
   const { bookings, loading: bookingsLoading } = useBookings()
   const { summary, loading: summaryLoading } = useTodaySlotsSummary()
   const today = new Date()
-  const { slots, loading: slotsLoading } = useSlots(today)
+
+  const [slots, setSlots] = useState([])
+  const [slotsLoading, setSlotsLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchTodaySlots() {
+      setSlotsLoading(true)
+      const todayStr = format(today, 'yyyy-MM-dd')
+      const { data } = await supabase
+        .from('time_slots')
+        .select('id, is_blocked, start_time, appointments(status)')
+        .eq('slot_date', todayStr)
+        .order('start_time')
+      setSlots(data || [])
+      setSlotsLoading(false)
+    }
+    fetchTodaySlots()
+  }, []) // fetch once on mount — re-fetches when user navigates back to dashboard
 
   const upcoming = bookings.filter(b => {
     if (b.status !== 'booked') return false
