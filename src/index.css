@@ -104,6 +104,21 @@
   color: #f59e0b !important;
 }
 
+/* react-image-crop overrides */
+.ReactCrop__crop-selection {
+  border: 2px solid #f59e0b !important;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55) !important;
+}
+.ReactCrop__drag-handle::after {
+  background-color: #f59e0b !important;
+  border: none !important;
+  width: 10px !important;
+  height: 10px !important;
+}
+.ReactCrop__drag-bar {
+  background: rgba(245, 158, 11, 0.3) !important;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #0f172a; }

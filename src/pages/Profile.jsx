@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { saveAvatar, loadAvatar, removeAvatar } from '@/lib/localAvatar'
+import { saveAvatarDataUrl, readFileAsDataUrl, loadAvatar, removeAvatar } from '@/lib/localAvatar'
+import { CropModal } from '@/components/CropModal'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -19,7 +20,7 @@ const roleColors = {
 export default function Profile() {
   const { user, profile } = useAuth()
   const [avatarUrl, setAvatarUrl] = useState(null)
-  const [uploading, setUploading] = useState(false)
+  const [cropSrc, setCropSrc] = useState(null)   // raw image waiting to be cropped
   const fileRef = useRef()
 
   useEffect(() => {
@@ -29,18 +30,30 @@ export default function Profile() {
   async function handleFileChange(e) {
     const file = e.target.files?.[0]
     if (!file) return
-    setUploading(true)
     try {
-      const url = await saveAvatar(user.id, file)
-      setAvatarUrl(url)
+      const dataUrl = await readFileAsDataUrl(file)
+      setCropSrc(dataUrl)   // open the crop modal
+    } catch (err) {
+      toast.error(err.message)
+    } finally {
+      e.target.value = ''
+    }
+  }
+
+  function handleCropSave(croppedDataUrl) {
+    try {
+      saveAvatarDataUrl(user.id, croppedDataUrl)
+      setAvatarUrl(croppedDataUrl)
+      setCropSrc(null)
       window.dispatchEvent(new Event('avatar-updated'))
       toast.success('Profile photo updated!')
     } catch (err) {
       toast.error(err.message)
-    } finally {
-      setUploading(false)
-      e.target.value = ''
     }
+  }
+
+  function handleCropCancel() {
+    setCropSrc(null)
   }
 
   function handleRemove() {
@@ -62,8 +75,17 @@ export default function Profile() {
           <User className="w-6 h-6 text-gold-400" />
           My Profile
         </h1>
-        <p className="text-slate-400 mt-1">Your account info — photo is saved on this device only</p>
+        <p className="text-slate-400 mt-1">Your account info - photo is saved on this device only</p>
       </div>
+
+      {/* Crop modal — shown after a file is picked */}
+      {cropSrc && (
+        <CropModal
+          imageSrc={cropSrc}
+          onSave={handleCropSave}
+          onCancel={handleCropCancel}
+        />
+      )}
 
       {/* Avatar section */}
       <Card>
@@ -99,10 +121,10 @@ export default function Profile() {
           <div className="space-y-3">
             <div>
               <p className="text-sm font-medium text-slate-300">
-                {avatarUrl ? 'Looking great! 👍' : 'No photo set yet'}
+                {avatarUrl ? 'Looking great!' : 'No photo set yet'}
               </p>
               <p className="text-xs text-slate-500 mt-0.5">
-                Stored only on this device · JPG, PNG, WEBP · auto-resized to 200×200px
+                Stored only on this device · You can crop after selecting
               </p>
             </div>
             <div className="flex gap-2 flex-wrap">
@@ -110,10 +132,9 @@ export default function Profile() {
                 size="sm"
                 variant="outline"
                 onClick={() => fileRef.current?.click()}
-                disabled={uploading}
               >
                 <Camera className="w-4 h-4" />
-                {uploading ? 'Saving...' : avatarUrl ? 'Change Photo' : 'Upload Photo'}
+                {avatarUrl ? 'Change Photo' : 'Upload Photo'}
               </Button>
               {avatarUrl && (
                 <Button size="sm" variant="destructive" onClick={handleRemove}>
@@ -140,29 +161,13 @@ export default function Profile() {
           <CardTitle>Account Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <InfoRow
-            icon={User}
-            label="Full Name"
-            value={profile?.full_name}
-          />
-          <InfoRow
-            icon={Mail}
-            label="Email"
-            value={user?.email}
-          />
+          <InfoRow icon={User}       label="Full Name"    value={profile?.full_name} />
+          <InfoRow icon={Mail}       label="Email"        value={user?.email} />
           {profile?.roll_number && (
-            <InfoRow
-              icon={Hash}
-              label="Roll Number"
-              value={profile.roll_number}
-            />
+            <InfoRow icon={Hash}     label="Roll Number"  value={profile.roll_number} />
           )}
           {profile?.phone && (
-            <InfoRow
-              icon={Phone}
-              label="Phone"
-              value={profile.phone}
-            />
+            <InfoRow icon={Phone}    label="Phone"        value={profile.phone} />
           )}
           <InfoRow
             icon={ShieldCheck}
@@ -174,18 +179,13 @@ export default function Profile() {
             }
           />
           {joinDate && (
-            <InfoRow
-              icon={User}
-              label="Member Since"
-              value={joinDate}
-            />
+            <InfoRow icon={User} label="Member Since" value={joinDate} />
           )}
         </CardContent>
       </Card>
 
-      {/* Device storage note */}
       <p className="text-xs text-slate-600 text-center">
-        💡 Your profile photo is saved in your browser's local storage on this device.
+        Your profile photo is saved in your browser's local storage on this device.
         It won't appear on other devices or after clearing browser data.
       </p>
     </div>
@@ -201,7 +201,7 @@ function InfoRow({ icon: Icon, label, value }) {
       <div className="flex-1 min-w-0">
         <p className="text-xs text-slate-500 font-medium">{label}</p>
         {typeof value === 'string' || typeof value === 'undefined' ? (
-          <p className="text-sm text-slate-200 mt-0.5 truncate">{value || '—'}</p>
+          <p className="text-sm text-slate-200 mt-0.5 truncate">{value || '-'}</p>
         ) : (
           <div className="mt-0.5">{value}</div>
         )}
