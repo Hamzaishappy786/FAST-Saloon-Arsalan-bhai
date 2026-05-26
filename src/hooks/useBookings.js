@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 import { useRealtimeListener } from '@/context/RealtimeContext'
 import { debounce } from '@/lib/debounce'
+import { saveBookingsLocally } from '@/lib/localBookings'
 
 export function useBookings() {
   const { user } = useAuth()
@@ -26,6 +27,8 @@ export function useBookings() {
 
       if (fetchError) throw fetchError
       setBookings(data || [])
+      // Save to localStorage so past bookings survive DB cleanup
+      saveBookingsLocally(user.id, data || [])
     } catch (err) {
       setError(err.message)
     } finally {
@@ -63,6 +66,33 @@ export function useBookings() {
   return { bookings, loading, error, bookSlot, cancelBooking, refetch: fetchBookings }
 }
 
+// Clean up appointments older than 7 days from the database.
+// Runs once per admin session to keep the system fresh.
+let cleanupDone = false
+async function cleanupOldAppointments() {
+  if (cleanupDone) return
+  cleanupDone = true
+  try {
+    const cutoff = new Date()
+    cutoff.setDate(cutoff.getDate() - 7)
+    const cutoffStr = cutoff.toISOString().split('T')[0]
+
+    // Delete appointments linked to slots older than 7 days
+    await supabase
+      .from('appointments')
+      .delete()
+      .lt('booked_at', cutoffStr)
+
+    // Also delete orphan time_slots older than 7 days to keep DB tidy
+    await supabase
+      .from('time_slots')
+      .delete()
+      .lt('slot_date', cutoffStr)
+  } catch (err) {
+    console.error('Cleanup old appointments failed:', err)
+  }
+}
+
 export function useAllBookings() {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -70,7 +100,9 @@ export function useAllBookings() {
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
-      // Scoped to today + next 7 days to avoid fetching entire history
+      // Clean up records older than 7 days
+      await cleanupOldAppointments()
+
       const today = new Date().toISOString().split('T')[0]
       const { data, error } = await supabase
         .from('appointments')

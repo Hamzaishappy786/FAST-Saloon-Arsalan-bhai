@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useBookings } from '@/hooks/useBookings'
+import { useAuth } from '@/context/AuthContext'
+import { loadLocalBookings } from '@/lib/localBookings'
 import { AppointmentCard } from '@/components/AppointmentCard'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -19,12 +21,56 @@ function isUpcoming(booking) {
   } catch { return false }
 }
 
+/** Check if a local-format booking is upcoming */
+function isLocalUpcoming(b) {
+  if (b.status !== 'booked') return false
+  if (!b.slot_date || !b.start_time) return false
+  try {
+    const dt = parse(`${b.slot_date} ${b.start_time}`, 'yyyy-MM-dd HH:mm:ss', new Date())
+    return isAfter(dt, new Date())
+  } catch { return false }
+}
+
 export default function MyBookings() {
+  const { user } = useAuth()
   const { bookings, loading, cancelBooking } = useBookings()
   const [cancelling, setCancelling] = useState(null)
 
   const upcoming = bookings.filter(isUpcoming)
-  const past = bookings.filter(b => !isUpcoming(b))
+
+  // Past bookings: merge server data with localStorage history
+  // so entries survive the 7-day DB cleanup
+  const past = useMemo(() => {
+    const serverPast = bookings.filter(b => !isUpcoming(b))
+    const serverIds = new Set(serverPast.map(b => b.id))
+
+    // Grab locally stored bookings that are no longer in the DB
+    const localBookings = loadLocalBookings(user?.id)
+    const localOnly = localBookings
+      .filter(b => !serverIds.has(b.id) && !isLocalUpcoming(b))
+      .map(b => ({
+        // Shape it like a server booking so AppointmentCard can render it
+        id: b.id,
+        status: b.status,
+        notes: b.notes,
+        booked_at: b.booked_at,
+        updated_at: b.updated_at,
+        time_slots: {
+          slot_date: b.slot_date,
+          start_time: b.start_time,
+          end_time: b.end_time,
+          barbers: { name: b.barber_name || 'Unknown' },
+        },
+        _local: true, // flag so we know it came from localStorage
+      }))
+
+    // Merge and sort by date descending
+    return [...serverPast, ...localOnly].sort((a, b) => {
+      const dateA = a.time_slots?.slot_date || a.booked_at || ''
+      const dateB = b.time_slots?.slot_date || b.booked_at || ''
+      return dateB.localeCompare(dateA)
+    })
+  }, [bookings, user?.id])
 
   async function handleCancel(id) {
     setCancelling(id)
