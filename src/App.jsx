@@ -9,6 +9,7 @@ import Dashboard from '@/pages/Dashboard'
 import BookAppointment from '@/pages/BookAppointment'
 import MyBookings from '@/pages/MyBookings'
 import AdminPanel from '@/pages/AdminPanel'
+import Profile from '@/pages/Profile'
 
 function Layout({ children }) {
   return (
@@ -71,6 +72,15 @@ export default function App() {
             element={
               <ProtectedRoute adminOnly>
                 <Layout><AdminPanel /></Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Layout><Profile /></Layout>
               </ProtectedRoute>
             }
           />

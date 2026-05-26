@@ -1,15 +1,38 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { LogOut, User, Scissors, LayoutDashboard, CalendarPlus, BookOpen, ShieldCheck, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { getDisplayName, getInitials } from '@/lib/nameUtils'
+import { loadAvatar } from '@/lib/localAvatar'
+import { useState, useEffect } from 'react'
 
 export function Navbar() {
   const { user, profile, signOut, isAdmin } = useAuth()
   const navigate = useNavigate()
+  const [avatarUrl, setAvatarUrl] = useState(null)
+
+  // Load avatar from localStorage whenever user changes
+  useEffect(() => {
+    if (user?.id) setAvatarUrl(loadAvatar(user.id))
+    else setAvatarUrl(null)
+  }, [user?.id])
+
+  // Re-check avatar when tab regains focus (user may have updated it on profile page)
+  useEffect(() => {
+    function onFocus() {
+      if (user?.id) setAvatarUrl(loadAvatar(user.id))
+    }
+    window.addEventListener('focus', onFocus)
+    // Also listen for a custom event fired by Profile page on save
+    window.addEventListener('avatar-updated', onFocus)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('avatar-updated', onFocus)
+    }
+  }, [user?.id])
 
   async function handleSignOut() {
     try {
@@ -77,6 +100,7 @@ export function Navbar() {
               <DropdownMenu.Trigger asChild>
                 <button className="flex items-center gap-2 rounded-xl px-3 py-2 hover:bg-white/5 transition-colors group focus:outline-none">
                   <Avatar className="h-8 w-8">
+                    {avatarUrl && <AvatarImage src={avatarUrl} alt="avatar" />}
                     <AvatarFallback className="text-xs">{initials}</AvatarFallback>
                   </Avatar>
                   <div className="hidden sm:block text-left">
@@ -95,17 +119,34 @@ export function Navbar() {
                   sideOffset={4}
                   align="end"
                 >
-                  <div className="px-3 py-2 border-b border-white/8 mb-1">
-                    <p className="text-sm font-semibold text-slate-200">{profile?.full_name || 'User'}</p>
-                    <p className="text-xs text-slate-500">{user.email}</p>
+                  {/* Header with avatar */}
+                  <div className="px-3 py-2 border-b border-white/8 mb-1 flex items-center gap-3">
+                    <Avatar className="h-9 w-9 shrink-0">
+                      {avatarUrl && <AvatarImage src={avatarUrl} alt="avatar" />}
+                      <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-200 truncate">{profile?.full_name || 'User'}</p>
+                      <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                    </div>
                   </div>
+
+                  <DropdownMenu.Item asChild>
+                    <Link
+                      to="/profile"
+                      className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-300 hover:text-slate-100 hover:bg-white/5 rounded-lg cursor-pointer transition-colors focus:outline-none focus:bg-white/5"
+                    >
+                      <User className="w-4 h-4" />
+                      My Profile
+                    </Link>
+                  </DropdownMenu.Item>
 
                   <DropdownMenu.Item asChild>
                     <Link
                       to="/my-bookings"
                       className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-300 hover:text-slate-100 hover:bg-white/5 rounded-lg cursor-pointer transition-colors focus:outline-none focus:bg-white/5"
                     >
-                      <User className="w-4 h-4" />
+                      <BookOpen className="w-4 h-4" />
                       My Bookings
                     </Link>
                   </DropdownMenu.Item>
