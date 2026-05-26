@@ -31,7 +31,7 @@ This app won't change much. You'll still show up, still talk nonsense, still arg
 
 Take care of each other. Keep the place alive. And always tip Arsalan bhai.
 
-— *With love, Batch of 2025* 🎓
+— *With love, Batch of 2026* 🎓
 
 ---
 
@@ -155,96 +155,9 @@ where id = (
 
 ---
 
-## ⚙️ Technical Setup (For Whoever Maintains This)
-
-### 1. Create a Supabase Project
-
-1. Go to [supabase.com](https://supabase.com) → **New Project** → name it `nuces-salon`
-2. Pick a region close to Pakistan (Singapore works well)
-3. Wait ~2 minutes for provisioning
-
-### 2. Run the Database Schema
-
-In the Supabase dashboard → **SQL Editor → New Query**:
-
-1. Paste [`supabase_schema.sql`](./supabase_schema.sql) → Run
-2. Paste [`supabase_seed.sql`](./supabase_seed.sql) → Run
-
-This creates all tables, security policies, realtime, and seeds 2 barbers + 7 days of slots.
-
-### 3. Environment Variables
-
-```bash
-cp .env.example .env
-```
-
-```env
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-public-key
-```
-
-Get these from **Supabase → Project Settings → API**.
-
-### 4. Run Locally
-
-```bash
-npm install --legacy-peer-deps
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173)
-
-### 5. Deploy to Vercel
-
-1. Push to GitHub
-2. [vercel.com](https://vercel.com) → **New Project** → import the repo
-3. Add the two env vars from step 3
-4. Click **Deploy**
-
-The `vercel.json` handles SPA routing automatically. Free tier handles 500 users easily.
-
----
-
-## 🗂️ Project Structure
-
-```
-nuces-salon/
-├── public/
-│   ├── scissors.svg        ← favicon
-│   ├── arsalan.jpg         ← add Arsalan bhai's photo here
-│   └── amjad.jpg           ← add Ustad Amjad's photo here
-├── src/
-│   ├── components/
-│   │   ├── ui/             ← Button, Card, Badge, Dialog, Tabs, Avatar, Skeleton
-│   │   ├── Navbar.jsx
-│   │   ├── ProtectedRoute.jsx
-│   │   ├── BookingCalendar.jsx
-│   │   ├── SlotGrid.jsx
-│   │   └── AppointmentCard.jsx
-│   ├── pages/
-│   │   ├── Login.jsx
-│   │   ├── Dashboard.jsx
-│   │   ├── BookAppointment.jsx
-│   │   ├── MyBookings.jsx
-│   │   └── AdminPanel.jsx
-│   ├── hooks/
-│   │   ├── useSlots.js     ← realtime slot subscriptions
-│   │   └── useBookings.js  ← booking CRUD
-│   ├── context/AuthContext.jsx
-│   ├── lib/supabase.js
-│   └── App.jsx
-├── supabase_schema.sql     ← run this first in Supabase
-├── supabase_seed.sql       ← run this second
-└── vercel.json
-```
-
----
-
 <div align="center">
 
-**Built with React · Supabase · Tailwind CSS · lots of nostalgia**
-
 *FAST NUCES, CFD Campus — Hostel Salon*
-*Batch of 2025 🎓*
+*Batch of 2026 🎓*
 
 </div>
