@@ -11,6 +11,38 @@ import { CalendarPlus, Clock, CheckCircle, Scissors, TrendingUp, Zap } from 'luc
 import { format, parseISO, isAfter, parse } from 'date-fns'
 import { getDisplayName } from '@/lib/nameUtils'
 
+const yearMessages = {
+  '1': {
+    line: "Aa to gaye ho, ab nikal k dikhao yahan se.",
+    sub:  "You walked in on your own. Now let's see if you can walk out the same way.",
+  },
+  '2': {
+    line: "First year did not break you. Respect.",
+    sub:  "But do not get comfortable. FAST has a way of humbling people right when they think they have figured it out.",
+  },
+  '3': {
+    line: "Three years in and still standing.",
+    sub:  "You have seen batchmates disappear, semesters that felt like sentences, and somehow you kept showing up. That is not luck. That is character.",
+  },
+  '4': {
+    line: "You survived this far. Most did not.",
+    sub:  "The sleepless nights, the impossible deadlines, the semesters that felt like war — and yet here you are. Whatever comes next, you are already tougher than you think. Go get it.",
+  },
+}
+
+function YearBanner({ year }) {
+  const msg = yearMessages[year]
+  if (!msg) return null
+  return (
+    <div className="relative overflow-hidden rounded-xl border border-gold-500/20 bg-gold-500/5 px-6 py-5">
+      {/* Decorative side bar */}
+      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gold-400 to-gold-600 rounded-l-xl" />
+      <p className="text-base font-semibold text-gold-300 ml-2">{msg.line}</p>
+      <p className="text-sm text-slate-400 mt-1 ml-2">{msg.sub}</p>
+    </div>
+  )
+}
+
 function formatTime(timeStr) {
   try {
     const d = parse(timeStr, 'HH:mm:ss', new Date())
@@ -83,6 +115,11 @@ export default function Dashboard() {
           </Link>
         </Button>
       </div>
+
+      {/* Year banner - only shows if student has set their year */}
+      {profile?.role === 'student' && profile?.year && (
+        <YearBanner year={profile.year} />
+      )}
 
       {/* Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

@@ -42,12 +42,12 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  async function signUp({ email, password, fullName, rollNumber, phone, role }) {
+  async function signUp({ email, password, fullName, rollNumber, phone, role, year }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName, roll_number: rollNumber, phone, role },
+        data: { full_name: fullName, roll_number: rollNumber, phone, role, year: year || null },
       },
     })
     if (error) throw error

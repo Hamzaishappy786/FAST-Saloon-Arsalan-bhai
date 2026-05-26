@@ -14,6 +14,7 @@ create table public.profiles (
   roll_number text unique,
   phone text,
   role text not null default 'student' check (role in ('student', 'teacher', 'admin', 'barber')),
+  year text check (year in ('1', '2', '3', '4')),
   created_at timestamptz default now()
 );
 
@@ -107,13 +108,14 @@ create policy "Users can cancel own appointments"
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
-  insert into public.profiles (id, full_name, roll_number, phone, role)
+  insert into public.profiles (id, full_name, roll_number, phone, role, year)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', 'User'),
     new.raw_user_meta_data->>'roll_number',
     new.raw_user_meta_data->>'phone',
-    coalesce(new.raw_user_meta_data->>'role', 'student')
+    coalesce(new.raw_user_meta_data->>'role', 'student'),
+    new.raw_user_meta_data->>'year'
   );
   return new;
 end;

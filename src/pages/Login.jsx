@@ -19,6 +19,7 @@ export default function Login() {
     rollNumber: '',
     phone: '',
     role: 'student',
+    year: '',
   })
 
   if (!loading && user) return <Navigate to="/dashboard" replace />
@@ -45,6 +46,7 @@ export default function Login() {
           rollNumber: form.rollNumber,
           phone: form.phone,
           role: form.role,
+          year: form.role === 'student' ? form.year : null,
         })
         toast.success('Account created! You can now sign in.')
         setMode('login')
@@ -142,7 +144,7 @@ export default function Login() {
                       <button
                         key={r}
                         type="button"
-                        onClick={() => setForm(f => ({ ...f, role: r }))}
+                        onClick={() => setForm(f => ({ ...f, role: r, year: r === 'teacher' ? '' : f.year }))}
                         className={`py-2.5 rounded-xl text-sm font-medium border transition-all capitalize ${
                           form.role === r
                             ? 'bg-gold-500/15 text-gold-300 border-gold-500/40'
@@ -154,6 +156,40 @@ export default function Login() {
                     ))}
                   </div>
                 </div>
+
+                {/* Year selector - students only, optional */}
+                {form.role === 'student' && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-1.5">
+                      Year of Study
+                      <span className="text-slate-500 font-normal ml-1.5">(optional)</span>
+                    </label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[
+                        { value: '1', label: '1st Year' },
+                        { value: '2', label: '2nd Year' },
+                        { value: '3', label: '3rd Year' },
+                        { value: '4', label: '4th Year' },
+                      ].map(({ value, label }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setForm(f => ({
+                            ...f,
+                            year: f.year === value ? '' : value
+                          }))}
+                          className={`py-2.5 rounded-xl text-xs font-medium border transition-all ${
+                            form.year === value
+                              ? 'bg-gold-500/15 text-gold-300 border-gold-500/40'
+                              : 'text-slate-400 border-white/10 hover:border-white/20 hover:text-slate-200'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
